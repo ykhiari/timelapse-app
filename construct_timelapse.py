@@ -1,8 +1,10 @@
 # imports
 import cv2
 import os
-from glob import glob
+import progressbar
 import argparse
+from glob import glob
+
 
 # define an argument parser for the script
 parser = argparse.ArgumentParser()
@@ -45,9 +47,16 @@ def get_image_paths(outputdir) -> list:
     unsorted_img_list = glob(os.path.join(outputdir,"*.jpg"))
     return sorted(unsorted_img_list,key=get_number)
 
+# construct the list of images
+list_images = get_image_paths(args["imgloc"])
+
+# set up a progress bar
+widget = [["Building Video: ", progressbar.Percentage(), " ", progressbar.Bar(), " ", progressbar.ETA()]]
+pbar = progressbar.ProgressBar(maxval=len(list_images), widget=widget).start()
+
 # video construction process
 print("Building the video...")
-for img_path in get_image_paths(args["imgloc"]):
+for i,img_path in enumerate(list_images):
     # read the image
     frame = cv2.imread(img_path)
     # initialize the writer if not
@@ -56,7 +65,10 @@ for img_path in get_image_paths(args["imgloc"]):
         writer = cv2.VideoWriter(video_path,fourcc,args["fps"],(w,h),True)
     # write the image in the writer
     writer.write(frame)
+    # update the progressbar
+    pbar.update(i)
 
 print("Cleaning...")
 writer.release()
+pbar.finish()
 
